@@ -29,7 +29,7 @@ namespace Horai.Mokushiroku.Models
         public required List<string> Status { get; init; } = new();
 
         [JsonProperty("corruption")]
-        public required string Corruption { get; init; }
+        public required List<HasDropRate> Corruption { get; init; }
 
         [JsonProperty("group")]
         public required Group Group { get; set; }

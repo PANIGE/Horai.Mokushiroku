@@ -24,7 +24,7 @@ namespace Horai.Mokushiroku.Utils
             .AddField("Statut", Codify(profile.Status.PickRandom()), true)
             .AddField("Type 1", getField(profile.Type1), true)
             .AddField("Type 2", getField(profile.Type2), true)
-            .AddField("Corruption", Codify(profile.Corruption), true);
+            .AddField("Corruption", getField(profile.Corruption), true);
             var embed = builder.Build();
             return embed;
         }

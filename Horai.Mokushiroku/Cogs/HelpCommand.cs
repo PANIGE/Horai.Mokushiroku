@@ -4,7 +4,7 @@ using System.Threading.Tasks;
 
 namespace Horai.Mokushiroku.Cogs
 {
-    internal class HelpCommand : ModuleBase<SocketCommandContext>
+    public class HelpCommand : ModuleBase<SocketCommandContext>
     {
         [Command("help")]
         public async Task Help()

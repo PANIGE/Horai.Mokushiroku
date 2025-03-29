@@ -19,7 +19,8 @@ namespace Horai.Mokushiroku.Core
         private CommandService Commands { get; } = new CommandService();
         private IServiceProvider Services { get; set; }
 
-        private Dictionary<ulong, (DateTime, bool)> rateLimiter { get; } = new Dictionary<ulong, (DateTime, bool)>();
+        private DateTime rateLimiter { get; set; } = DateTime.MinValue;
+        private bool rateLimiterAlready { get; set; } = false;
 
         public async Task RunBotAsync(string token)
         {
@@ -81,38 +82,28 @@ namespace Horai.Mokushiroku.Core
             {
                 switch (message.Content)
                 {
-                    case "https://tenor.com/view/suika-touhou-japanese-goblin-ibuki-gif-23549706":
+                    case string when message.Content.ToLowerInvariant().StartsWith("http") && message.Content.ToLowerInvariant().Contains("japanese") && message.Content.ToLowerInvariant().Contains("goblin"):
+                    case string when message.Content.StartsWith("https://cdn.discordapp.com/attachments/1148705059538997421/1354460631549477005/suianese.gif"):
                     case "https://www.youtube.com/watch?v=UIp6_0kct_U":
                     case "https://www.youtube.com/watch?v=Tc8iu0XFUQc":
                         await context.Message.AddReactionAsync(new Emoji("🛑"));
-                        if (rateLimiter.TryGetValue(message.Author.Id, out (DateTime time, bool alreadyLimited) value))
+
+                        if (rateLimiter.Day == DateTime.Now.Day)
                         {
-                            var span = DateTime.UtcNow - value.time;
-
-                            if (span < TimeSpan.FromSeconds(30))
+                            if (!rateLimiterAlready)
                             {
-                                if (!value.alreadyLimited)
-                                {
-                                    rateLimiter[message.Author.Id] = new(DateTime.UtcNow, true);
-                                    await context.Channel.SendMessageAsync("https://media.tenor.com/1lAqw2H56OAAAAAC/kaamelott-guenievre.gif");
-                                    return;
-                                }
-                                else
-                                {
-                                    return;
-                                }
-
-                            }
-                            else
-                            {
-                                rateLimiter[message.Author.Id] = new(DateTime.UtcNow, false);
+                                rateLimiterAlready = true;
+                                await context.Channel.SendMessageAsync("https://media.tenor.com/1lAqw2H56OAAAAAC/kaamelott-guenievre.gif");
+                                return;
                             }
                         }
                         else
                         {
-                            rateLimiter[message.Author.Id] = new(DateTime.UtcNow, false);
+                            rateLimiter = DateTime.UtcNow;
+                            rateLimiterAlready = false;
+                            await context.Channel.SendFileAsync("japanese_goblin.png", ":octagonal_sign:");
                         }
-                        await context.Channel.SendFileAsync("japanese_goblin.png", ":octagonal_sign:");
+
                         return;
                 }
                 

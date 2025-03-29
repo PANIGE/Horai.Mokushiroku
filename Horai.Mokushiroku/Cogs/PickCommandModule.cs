@@ -12,6 +12,7 @@ using System.Net.Http;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
+using static System.Runtime.InteropServices.JavaScript.JSType;
 using Group = Horai.Mokushiroku.Models.Group;
 
 namespace Horai.Mokushiroku.Cogs
@@ -40,10 +41,20 @@ namespace Horai.Mokushiroku.Cogs
         }
 
         [Command("pick")]
-        public async Task Pick([Remainder] string filterString = "")
+        public async Task Pick(string category = "", [Remainder] string filterString = "")
         {
             if (_data == null || !_data.Any())
                 throw new Exception("Could not read data.json or data is empty");
+
+            if (string.IsNullOrWhiteSpace(category))
+            {
+                var categories = _data.Select(p => p.Category).Distinct();
+                await ReplyAsync($"$pick **quoi**, Banane 🍌?\n`$pick [category]` les categories étant `{(string.Join(',',categories.Select(s => $"\"{s}\"")))}` ou `any` pour en choisir n'importe");
+                return;
+            }
+
+            if (category != "any")
+                filterString = $"category={category} {filterString}";
 
             var filteredData = ApplyFilters(_data, filterString);
 
@@ -349,14 +360,14 @@ namespace Horai.Mokushiroku.Cogs
             var genres = data.SelectMany(p => p.Genre.Select(g => g.Name)).Distinct();
             var puissances = data.SelectMany(p => p.PowerLevel.Select(p => p.Name)).Distinct();
             var status = data.SelectMany(p => p.Status).Distinct();
-            var corruption = data.Select(p => p.Corruption).Distinct();
+            var corruption = data.SelectMany(p => p.Corruption.Select(p => p.Name)).Distinct();
 
             embedBuilder
-                .AddField("category", string.Join(", ", categories))
-                .AddField("genre", string.Join(", ", genres))
-                .AddField("puissance", string.Join(", ", puissances))
-                .AddField("status", string.Join(", ", status))
-                .AddField("corruption", string.Join(", ", corruption));
+                .AddField("📂 Catégories `category`", string.Join(", ", categories))
+                .AddField("🎭 Genres `genre`", string.Join(", ", genres))
+                .AddField("⚡ Puissances `puissance`", string.Join(", ", puissances))
+                .AddField("📈 Humeurs `status`", string.Join(", ", status))
+                .AddField("☠️ Corruption `corruption`", string.Join(", ", corruption));
 
             return embedBuilder.Build();
         }
@@ -381,7 +392,7 @@ namespace Horai.Mokushiroku.Cogs
         {
             Dictionary<string, (string comparator, string value)> filters = new();
 
-            Regex regex = new(@"(\w+)([<>=]{1,2})([\w\s]+)", RegexOptions.IgnoreCase);
+            Regex regex = new(@"(\w+)([<>=!]{1,2})([\w\s]+)", RegexOptions.IgnoreCase);
 
             foreach (string part in filterString.Split(' '))
             {
@@ -447,8 +458,15 @@ namespace Horai.Mokushiroku.Cogs
                         }
                     case "corruption":
                         {
-                            var encounterProfiles = data.Where(profile =>
-                            profile.Corruption.Equals(value, StringComparison.OrdinalIgnoreCase)).ToArray();
+                            IEnumerable<EncounterProfile> fdata = data.Where(profile =>
+                            profile.Corruption.Any(g => g.Name.Equals(value, StringComparison.OrdinalIgnoreCase)));
+
+                            var encounterProfiles = fdata as EncounterProfile[] ?? fdata.ToArray();
+
+                            foreach (var profile in encounterProfiles)
+                            {
+                                profile.Corruption.RemoveAll(g => !g.Name.Equals(value, StringComparison.OrdinalIgnoreCase));
+                            }
                             return encounterProfiles;
                         }
                     case "puissance":
