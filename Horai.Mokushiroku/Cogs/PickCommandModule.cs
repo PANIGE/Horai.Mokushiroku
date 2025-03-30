@@ -22,12 +22,12 @@ namespace Horai.Mokushiroku.Cogs
         private List<EncounterProfile>? _data;
         Dictionary<string, string> _powerUris = new()
         {
-            ["constructs"] = "https://powerlisting.fandom.com/wiki/Special:RandomInCategory/Constructs",
-            ["enhancements"] = "https://powerlisting.fandom.com/wiki/Special:RandomInCategory/Enhancements",
-            ["magical"] = "https://powerlisting.fandom.com/wiki/Special:RandomInCategory/Magical_Powers",
-            ["manipulations"] = "https://powerlisting.fandom.com/wiki/Special:RandomInCategory/Manipulations",
-            ["physiology"] = "https://powerlisting.fandom.com/wiki/Special:RandomInCategory/Physiology",
-            ["psychic"] = "https://powerlisting.fandom.com/wiki/Special:RandomInCategory/Psychic_Powers",
+            ["creation"] = "https://powerlisting.fandom.com/wiki/Special:RandomInCategory/Constructs",
+            ["augmentation"] = "https://powerlisting.fandom.com/wiki/Special:RandomInCategory/Enhancements",
+            ["magie"] = "https://powerlisting.fandom.com/wiki/Special:RandomInCategory/Magical_Powers",
+            ["manipulation"] = "https://powerlisting.fandom.com/wiki/Special:RandomInCategory/Manipulations",
+            ["transformation"] = "https://powerlisting.fandom.com/wiki/Special:RandomInCategory/Physiology",
+            ["psychique"] = "https://powerlisting.fandom.com/wiki/Special:RandomInCategory/Psychic_Powers",
             ["science"] = "https://powerlisting.fandom.com/wiki/Special:RandomInCategory/Science_Powers"
         };
 
@@ -67,7 +67,13 @@ namespace Horai.Mokushiroku.Cogs
             EncounterProfile profile = filteredData.PickRandom();
             Embed embed = DiscordUtils.CreateCharacterEmbed(profile);
             await ReplyAsync(embed: embed);
-            await ReplyAsync($"```diff\n- Vous pouvez ajouter un pouvoir avec $power [power (optionnel)]```");
+            await ReplyAsync($"```diff\n- Vous pouvez ajouter un pouvoir avec $power [power (optionnel)]```\n utilisation : `$power [category]` les categories étant : \n{(string.Join('\n', _powerUris.Select(s => $"- `{s.Key}`")))}\n ou `any` pour en choisir n'importe");
+        }
+
+        [Command("list-dl")]
+        public async Task DlList()
+        {
+
         }
 
         [Command("list")]
@@ -206,6 +212,21 @@ namespace Horai.Mokushiroku.Cogs
             
         }
 
+        [Command("status")]
+        public async Task SetStatus(int status,[Remainder] string str)
+        {
+            var allowedUsers = new List<ulong> { 248793051277950986, 212880817712660480 };
+
+            if (!allowedUsers.Contains(Context.User.Id))
+            {
+                await ReplyAsync("Tu n'as pas l'autorisation d'utiliser cette commande.");
+                return;
+            }
+
+            await Context.Client.SetStatusAsync((UserStatus) status);
+            Context.Client.SetActivityAsync(new CustomStatusGame(str));
+        }
+
         [Command("add")]
         public async Task Add([Remainder] string json)
         {
@@ -317,19 +338,24 @@ namespace Horai.Mokushiroku.Cogs
 
 
         [Command("power")]
-        public async Task GetPower([Remainder] string data = "")
+        public async Task GetPower([Remainder]string type = "")
         {
-            
 
             List<string> pool = new List<string>();
 
-            if (string.IsNullOrWhiteSpace(data))
+            if (string.IsNullOrWhiteSpace(type))
+            {
+                await ReplyAsync($"$power **quoi**, Banane 🍌?\n`$power [category]` les categories étant `{(string.Join(',', _powerUris.Select(s => $"\"{s.Key}\"")))}` ou `any` pour en choisir n'importe");
+                return;
+            }
+
+            if (type.ToLowerInvariant() == "any")
             {
                 pool = _powerUris.Values.ToList();
             }
             else
             {
-                string[] splitted = data.Split(',').Select(s => s.Trim()).ToArray();
+                string[] splitted = type.Split(',').Select(s => s.Trim()).ToArray();
                 foreach (string key in splitted)
                 {
                     if (!_powerUris.ContainsKey(key))
@@ -532,6 +558,31 @@ namespace Horai.Mokushiroku.Cogs
             }
 
             return filteredData;
+        }
+
+
+        [Command("export")]
+        public async Task Export()
+        {
+            if (_data == null || !_data.Any())
+            {
+                await ReplyAsync("Les données sont introuvables ou vides.");
+                return;
+            }
+
+            using (Context.Channel.EnterTypingState())
+            {
+                try
+                {
+                    string path = EncounterPdfGenerator.Generate(_data);
+                    await Context.Channel.SendFileAsync(path, "Voici le PDF des encounters !");
+                    File.Delete(path);
+                }
+                catch (Exception ex)
+                {
+                    await ReplyAsync($"Erreur : {ex.Message}");
+                }
+            }
         }
 
 
