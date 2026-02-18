@@ -1,8 +1,10 @@
 ﻿using Discord;
 using Discord.Commands;
 using Discord.Interactions;
+using Discord.Rest;
 using Discord.WebSocket;
 using Microsoft.Extensions.DependencyInjection;
+using Sprache;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -16,6 +18,7 @@ namespace Horai.Mokushiroku.Core
     public class BotCore
     {
         private DiscordSocketClient _client;
+        private Random _random = new();
         private CommandService Commands { get; } = new CommandService();
         private IServiceProvider Services { get; set; }
 
@@ -27,7 +30,7 @@ namespace Horai.Mokushiroku.Core
             _client = new DiscordSocketClient(new DiscordSocketConfig
             {
                 LogLevel = LogSeverity.Info,
-                GatewayIntents = GatewayIntents.AllUnprivileged | GatewayIntents.MessageContent
+                GatewayIntents = GatewayIntents.All
             });
 
             var services = new ServiceCollection();
@@ -38,6 +41,8 @@ namespace Horai.Mokushiroku.Core
             Services = services.BuildServiceProvider();
 
             _client.Log += Log;
+            _client.UserJoined += OnUserJoined;
+            _client.UserLeft += OnUserLeft;
 
             await InitializeAsync();
 
@@ -45,6 +50,38 @@ namespace Horai.Mokushiroku.Core
             await _client.StartAsync();
 
             await Task.Delay(-1);
+        }
+
+        private async Task OnUserLeft(SocketGuild guild, SocketUser user)
+        {
+            
+        }
+
+        private async Task OnUserJoined(SocketGuildUser user)
+        {
+            Console.WriteLine("a");
+            var channel = (IMessageChannel)(await _client.GetChannelAsync(1148705059538997419));
+            await UserJoinMessage(1148705059538997419, user.Id);
+        }
+
+        private async Task UserJoinMessage(ulong targetChannel, ulong ping)
+        {
+            var guild = _client.GetGuild(1148705057169223790);
+            var channel = (IMessageChannel)(await _client.GetChannelAsync(targetChannel));
+            string userJoinMessage = $@"# ""Bienvenue <@{ping}>! 😊 ""
+Vous n'avez pas besoin d'avoir lu notre contexte pour commencer à nous poser des questions ! C'est toujours OK de créer des sujets dans <#1148937995769086002> ou de Pinger Ω pour toute interrogation, même si ces questions ont déjà été posées ailleurs !
+
+En attendant de nous rejoindre, mettez vous dans l'ambiance en lisant [notre Wiki](https://horai.obsidianportal.com/) !";
+
+            string[] names = new[] { "Shiba", "Kappa", "Neko", "Tanukitsune", "Daruma", "Bye world", "DarumaYokaï" };
+
+            var stickers = guild.Stickers.Where(s => names.Any(t => s.Name.Equals(t, StringComparison.CurrentCultureIgnoreCase))).ToList();
+            var i = _random.Next(0, stickers.Count() - 1);
+            var sticker = stickers[i];
+
+
+            await channel.SendMessageAsync(stickers: [sticker]);
+            await channel.SendMessageAsync(userJoinMessage);
         }
 
         private void BuildServices(ServiceCollection services)
@@ -71,12 +108,25 @@ namespace Horai.Mokushiroku.Core
 
             if (message.HasCharPrefix('$', ref argPos)) 
             {
-                var result = await Commands.ExecuteAsync(context, argPos, Services);
 
-                if (!result.IsSuccess)
+                try
                 {
-                    await message.Channel.SendMessageAsync($"Erreur : {result.ErrorReason}");
+                    var result = await Commands.ExecuteAsync(context, argPos, Services);
+                    if (!result.IsSuccess)
+                    {
+                        await message.Channel.SendMessageAsync($"Erreur : {result.ErrorReason}");
+                        await message.Channel.SendMessageAsync($"https://tenor.com/view/i-tried-father-pokemon-terminalmontage-pokemon-tcg-gif-10883483966743148762");
+                    }
                 }
+                catch (Exception e)
+                {
+                  
+                    await message.Channel.SendMessageAsync($"Erreur : {e.Message}");
+                    await message.Channel.SendMessageAsync($"https://tenor.com/view/i-tried-father-pokemon-terminalmontage-pokemon-tcg-gif-10883483966743148762");
+                    
+                }
+
+          
             }
             else
             {
@@ -104,6 +154,12 @@ namespace Horai.Mokushiroku.Core
                             await context.Channel.SendFileAsync("japanese_goblin.png", ":octagonal_sign:");
                         }
 
+                        return;
+
+                    case "good bot":
+                    case "goodbot":
+                    case "bon toutou":
+                        await message.Channel.SendMessageAsync($"https://tenor.com/view/thank-you-father-harry-partridge-happy-harry-thank-you-father-gif-22785772");
                         return;
                 }
                 

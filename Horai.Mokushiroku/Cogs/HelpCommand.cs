@@ -55,7 +55,10 @@ namespace Horai.Mokushiroku.Cogs
                 "→ Envoie une copie complète de la base de données en message privé.\n\n" +
 
                 "**`$status [int] [texte]`**\n" +
-                "→ Change le status du bot de façon personnalisée."
+                "→ Change le status du bot de façon personnalisée.\n\n" +
+
+                "**`$stamp [ping utilisateur]`**\n" +
+                "→ Approuve l'utilisateur."
             );
 
             // Filtres

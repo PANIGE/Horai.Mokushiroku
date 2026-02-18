@@ -175,9 +175,8 @@ namespace Horai.Mokushiroku.Cogs
         [Command("dump")]
         public async Task Dump()
         {
-            var allowedUsers = new List<ulong> { 248793051277950986, 212880817712660480 };
             
-            if (!allowedUsers.Contains(Context.User.Id))
+            if (!ManagementCommands.ManagementUsers.Contains(Context.User.Id))
             {
                 await ReplyAsync("Tu n'as pas l'autorisation d'utiliser cette commande.");
                 return;
@@ -215,9 +214,7 @@ namespace Horai.Mokushiroku.Cogs
         [Command("status")]
         public async Task SetStatus(int status,[Remainder] string str)
         {
-            var allowedUsers = new List<ulong> { 248793051277950986, 212880817712660480 };
-
-            if (!allowedUsers.Contains(Context.User.Id))
+            if (!ManagementCommands.ManagementUsers.Contains(Context.User.Id))
             {
                 await ReplyAsync("Tu n'as pas l'autorisation d'utiliser cette commande.");
                 return;
@@ -230,9 +227,7 @@ namespace Horai.Mokushiroku.Cogs
         [Command("add")]
         public async Task Add([Remainder] string json)
         {
-            var allowedUsers = new List<ulong> { 248793051277950986, 212880817712660480 };
-
-            if (!allowedUsers.Contains(Context.User.Id))
+            if (!ManagementCommands.ManagementUsers.Contains(Context.User.Id))
             {
                 await ReplyAsync("Tu n'as pas l'autorisation d'utiliser cette commande.");
                 return;
@@ -266,9 +261,7 @@ namespace Horai.Mokushiroku.Cogs
         [Command("remove")]
         public async Task Remove(int index)
         {
-            var allowedUsers = new List<ulong> { 248793051277950986, 212880817712660480 };
-
-            if (!allowedUsers.Contains(Context.User.Id))
+            if (!ManagementCommands.ManagementUsers.Contains(Context.User.Id))
             {
                 await ReplyAsync("Tu n'as pas l'autorisation d'utiliser cette commande.");
                 return;
@@ -289,9 +282,8 @@ namespace Horai.Mokushiroku.Cogs
         [Command("set")]
         public async Task Set()
         {
-            var allowedUsers = new List<ulong> { 248793051277950986, 212880817712660480 };
 
-            if (!allowedUsers.Contains(Context.User.Id))
+            if (!ManagementCommands.ManagementUsers.Contains(Context.User.Id))
             {
                 await ReplyAsync("Tu n'as pas l'autorisation d'utiliser cette commande.");
                 return;
