@@ -20,16 +20,17 @@ namespace Horai.Mokushiroku.Cogs
     public class PickCommandModule : ModuleBase<SocketCommandContext>
     {
         private List<EncounterProfile>? _data;
-        Dictionary<string, string> _powerUris = new()
-        {
-            ["creation"] = "https://powerlisting.fandom.com/wiki/Special:RandomInCategory/Constructs",
-            ["augmentation"] = "https://powerlisting.fandom.com/wiki/Special:RandomInCategory/Enhancements",
-            ["magie"] = "https://powerlisting.fandom.com/wiki/Special:RandomInCategory/Magical_Powers",
-            ["manipulation"] = "https://powerlisting.fandom.com/wiki/Special:RandomInCategory/Manipulations",
-            ["transformation"] = "https://powerlisting.fandom.com/wiki/Special:RandomInCategory/Physiology",
-            ["psychique"] = "https://powerlisting.fandom.com/wiki/Special:RandomInCategory/Psychic_Powers",
-            ["science"] = "https://powerlisting.fandom.com/wiki/Special:RandomInCategory/Science_Powers"
-        };
+        private readonly Dictionary<string, string> _powerCategories =
+            new(StringComparer.OrdinalIgnoreCase)
+            {
+                ["creation"] = "Constructs",
+                ["augmentation"] = "Enhancements",
+                ["magie"] = "Magical_Powers",
+                ["manipulation"] = "Manipulations",
+                ["transformation"] = "Physiology",
+                ["psychique"] = "Psychic_Powers",
+                ["science"] = "Science_Powers"
+            };
 
         public PickCommandModule()
         {
@@ -67,7 +68,7 @@ namespace Horai.Mokushiroku.Cogs
             EncounterProfile profile = filteredData.PickRandom();
             Embed embed = DiscordUtils.CreateCharacterEmbed(profile);
             await ReplyAsync(embed: embed);
-            await ReplyAsync($"```diff\n- Vous pouvez ajouter un pouvoir avec $power [power (optionnel)]```\n utilisation : `$power [category]` les categories étant : \n{(string.Join('\n', _powerUris.Select(s => $"- `{s.Key}`")))}\n ou `any` pour en choisir n'importe");
+            await ReplyAsync($"```diff\n- Vous pouvez ajouter un pouvoir avec $power [power (optionnel)]```\n utilisation : `$power [category]` les categories étant : \n{(string.Join('\n', _powerCategories.Select(s => $"- `{s.Key}`")))}\n ou `any` pour en choisir n'importe");
         }
 
         [Command("list-dl")]
@@ -330,41 +331,62 @@ namespace Horai.Mokushiroku.Cogs
 
 
         [Command("power")]
-        public async Task GetPower([Remainder]string type = "")
+        public async Task GetPower([Remainder] string type = "")
         {
-
-            List<string> pool = new List<string>();
-
             if (string.IsNullOrWhiteSpace(type))
             {
-                await ReplyAsync($"$power **quoi**, Banane 🍌?\n`$power [category]` les categories étant `{(string.Join(',', _powerUris.Select(s => $"\"{s.Key}\"")))}` ou `any` pour en choisir n'importe");
+                await ReplyAsync(
+                    $"$power **quoi**, Banane 🍌?\n" +
+                    $"`$power [category]`\n" +
+                    $"Les catégories sont : " +
+                    $"{string.Join(", ", _powerCategories.Keys.Select(k => $"`{k}`"))} " +
+                    $"ou `any` pour en choisir une au hasard.");
+
                 return;
             }
 
-            if (type.ToLowerInvariant() == "any")
+            List<string> categoryPool = new();
+
+            if (type.Equals("any", StringComparison.OrdinalIgnoreCase))
             {
-                pool = _powerUris.Values.ToList();
+                categoryPool.AddRange(_powerCategories.Values);
             }
             else
             {
-                string[] splitted = type.Split(',').Select(s => s.Trim()).ToArray();
-                foreach (string key in splitted)
+                string[] keys = type
+                    .Split(',', StringSplitOptions.RemoveEmptyEntries)
+                    .Select(key => key.Trim())
+                    .ToArray();
+
+                foreach (string key in keys)
                 {
-                    if (!_powerUris.ContainsKey(key))
+                    if (!_powerCategories.TryGetValue(key, out string? category))
                     {
-                        await ReplyAsync($"Clé invalide : {key}\n les clés valide sont : {string.Join(',', _powerUris.Select(s => $"`{s.Key}`"))}");
+                        await ReplyAsync(
+                            $"Clé invalide : `{key}`\n" +
+                            $"Les clés valides sont : " +
+                            $"{string.Join(", ", _powerCategories.Keys.Select(k => $"`{k}`"))}");
+
                         return;
                     }
-                    pool.Add(_powerUris[key]);
+
+                    categoryPool.Add(category);
                 }
             }
 
-            string uri = pool.PickRandom();
-            string redirectedUrl = await OnlineUtils.GetRedirectedUrlAsync(uri);
+            string selectedCategory = categoryPool.PickRandom();
 
-            await ReplyAsync(redirectedUrl);
+            string? powerUrl =
+                await OnlineUtils.GetRandomCategoryPageAsync(selectedCategory);
 
+            if (powerUrl is null)
+            {
+                await ReplyAsync(
+                    $"Aucun pouvoir trouvé dans la catégorie `{selectedCategory}`.");
+                return;
+            }
 
+            await ReplyAsync(powerUrl);
         }
 
         private Embed GenerateFieldsEmbed(List<EncounterProfile> data)
