@@ -134,6 +134,7 @@ En attendant de nous rejoindre, mettez vous dans l'ambiance en lisant [notre Wik
                 {
                     case string when message.Content.ToLowerInvariant().StartsWith("http") && message.Content.ToLowerInvariant().Contains("japanese") && message.Content.ToLowerInvariant().Contains("goblin"):
                     case string when message.Content.StartsWith("https://cdn.discordapp.com/attachments/1148705059538997421/1354460631549477005/suianese.gif"):
+                    case string when message.Content.StartsWith("https://klipy.com/gifs/") && (message.Content.Contains("suika")):
                     case "https://www.youtube.com/watch?v=UIp6_0kct_U":
                     case "https://www.youtube.com/watch?v=Tc8iu0XFUQc":
                         await context.Message.AddReactionAsync(new Emoji("🛑"));
@@ -160,6 +161,12 @@ En attendant de nous rejoindre, mettez vous dans l'ambiance en lisant [notre Wik
                     case "goodbot":
                     case "bon toutou":
                         await message.Channel.SendMessageAsync($"https://tenor.com/view/thank-you-father-harry-partridge-happy-harry-thank-you-father-gif-22785772");
+                        return;
+
+                    case "bad bot":
+                    case "badbot":
+                    case "méchant toutou":
+                        await message.Channel.SendMessageAsync($"https://tenor.com/view/i-tried-father-pokemon-terminalmontage-pokemon-tcg-gif-10883483966743148762");
                         return;
                 }
                 
